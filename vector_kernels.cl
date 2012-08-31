@@ -60,9 +60,9 @@ __kernel void vectorBoundaries(__global float *field, const unsigned int dim) {
 	unsigned int i = get_global_id(0);
 	unsigned int j = get_global_id(1);
 	
-	unsigned int lim = (dim + 2);
+	unsigned int lim = (dim + 1);
 
-	if(i < lim && j < lim && !((i == 0 && (j == 0 || j == lim)) || (i == lim && (j == 0 || j == lim)))) {
+	if(i < lim+1 && j < lim+1 && !((i == 0 && (j == 0 || j == lim)) || (i == lim && (j == 0 || j == lim)))) {
 		field[vindex(0, i, j, 0, dim)] = field[vindex(1, i, j, 0, dim)] * (-1); //left boundary
 		field[vindex(dim+1, i, j, 0, dim)] = field[vindex(dim, i, j, 0, dim)]* (-1); //right boundary
 		field[vindex(i, 0, j, 1, dim)] = field[vindex(i, 1, j, 1, dim)]* (-1); // bottom boundary
@@ -87,20 +87,20 @@ __kernel void vectorBoundaries(__global float *field, const unsigned int dim) {
 }
 
 __kernel void vectorVorticityConfinementFirst(__global float *field, __global float *tempVec, __global float *tempField, const unsigned int dim, const float dt0) {
-	unsigned int z = get_global_id(0);
+	unsigned int z = get_global_id(2);
 	unsigned int y = get_global_id(1);
-	unsigned int x = get_global_id(2);
+	unsigned int x = get_global_id(0);
 	
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
 		float x,y,z;
 		
-		x = tempVec[vindex(x,y,z,0,dim)] = (field[vindex(x,y+1,z,2,dim)] - field[vindex(x,y-1,z,2,dim)]) * 0.5 - (field[vindex(x,y,z+1,1,dim)] - field[vindex(x,y,z-1,1,dim)]) * 0.5;
-		y = tempVec[vindex(x,y,z,1,dim)] = (field[vindex(x,y,z+1,0,dim)] - field[vindex(x,y,z-1,0,dim)]) * 0.5 - (field[vindex(x+1,y,z,2,dim)] - field[vindex(x-1,y,z,2,dim)]) * 0.5;
-		z = tempVec[vindex(x,y,z,2,dim)] = (field[vindex(x+1,y,z,1,dim)] - field[vindex(x-1,y,z,1,dim)]) * 0.5 - (field[vindex(x,y+1,z,0,dim)] - field[vindex(x,y-1,z,0,dim)]) * 0.5;
+		x = tempVec[vindex(x,y,z,0,dim)] = ((field[vindex(x,y+1,z,2,dim)] - field[vindex(x,y-1,z,2,dim)]) * 0.5) - ((field[vindex(x,y,z+1,1,dim)] - field[vindex(x,y,z-1,1,dim)]) * 0.5);
+		y = tempVec[vindex(x,y,z,1,dim)] = ((field[vindex(x,y,z+1,0,dim)] - field[vindex(x,y,z-1,0,dim)]) * 0.5) - ((field[vindex(x+1,y,z,2,dim)] - field[vindex(x-1,y,z,2,dim)]) * 0.5);
+		z = tempVec[vindex(x,y,z,2,dim)] = ((field[vindex(x+1,y,z,1,dim)] - field[vindex(x-1,y,z,1,dim)]) * 0.5) - ((field[vindex(x,y+1,z,0,dim)] - field[vindex(x,y-1,z,0,dim)]) * 0.5);
 		
-		tempField[index(x,y,z,dim)] = sqrt(x*x + y*y + z*z);
+		tempField[index(x,y,z,dim)] = sqrt((x*x) + (y*y) + (z*z));
 	}	
 }
 
@@ -115,22 +115,22 @@ __kernel void vectorVorticityConfinementSecond(__global float *field, __global f
 		float Nx = (tempField[index(x+1,y,z,dim)] - tempField[index(x-1,y,z,dim)]) * 0.5;
 		float Ny = (tempField[index(x,y+1,z,dim)] - tempField[index(x,y-1,z,dim)]) * 0.5;
 		float Nz = (tempField[index(x,y,z+1,dim)] - tempField[index(x,y,z-1,dim)]) * 0.5;
-		float len1 = 1.0/(sqrt(Nx*Nx + Ny*Ny + Nz*Nz) + 0.0000001);
+		float len1 = 1.0/(sqrt((Nx*Nx) + (Ny*Ny) + (Nz*Nz)) + 0.0000001);
 		
 		Nx *= len1;
 		Ny *= len1;
 		Nz *= len1;
 		
-		field[vindex(x,y,z,0,dim)] += (Ny*tempVec[vindex(x,y,z,2,dim)] - Nz*tempVec[vindex(x,y,z,1,dim)]) * dt0;
-		field[vindex(x,y,z,1,dim)] += (Ny*tempVec[vindex(x,y,z,0,dim)] - Nz*tempVec[vindex(x,y,z,2,dim)]) * dt0;
-		field[vindex(x,y,z,2,dim)] += (Ny*tempVec[vindex(x,y,z,1,dim)] - Nz*tempVec[vindex(x,y,z,0,dim)]) * dt0;
+		field[vindex(x,y,z,0,dim)] += ((Ny*tempVec[vindex(x,y,z,2,dim)]) - (Nz*tempVec[vindex(x,y,z,1,dim)])) * dt0;
+		field[vindex(x,y,z,1,dim)] += ((Ny*tempVec[vindex(x,y,z,0,dim)]) - (Nz*tempVec[vindex(x,y,z,2,dim)])) * dt0 ;
+		field[vindex(x,y,z,2,dim)] += ((Ny*tempVec[vindex(x,y,z,1,dim)]) - (Nz*tempVec[vindex(x,y,z,0,dim)])) * dt0;
 	}
 }
 
 __kernel void vectorProjectionFirst(__global float *field, __global float *tempField, __global float *tempSecondField, const unsigned int dim, const float h) {
-	unsigned int z = get_global_id(0);
+	unsigned int z = get_global_id(2);
 	unsigned int y = get_global_id(1);
-	unsigned int x = get_global_id(2);
+	unsigned int x = get_global_id(0);
 	
 	unsigned int lim = (dim + 1);
 

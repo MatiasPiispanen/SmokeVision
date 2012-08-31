@@ -5,6 +5,7 @@ function VectorField(dim, viscosity, dt, boundaries) {
 	this.viscosity = viscosity;
 	this.dt = dt;
 	this.slip = true; // Hardcoded...
+	this.vorticityScale = 3.0;
 	
 	for(var i = 0; i < this.dim+2; i++) {
 		for(var j = 0; j < this.dim+2; j++) {
@@ -231,7 +232,7 @@ VectorField.prototype.vorticityConfinement = function() {
 		vectorVorticityFirstKernel.setKernelArg(1, vectorTempBuffer);
 		vectorVorticityFirstKernel.setKernelArg(2, scalarTempBuffer);
 		vectorVorticityFirstKernel.setKernelArg(3, this.dim, WebCL.types.UINT);
-		vectorVorticityFirstKernel.setKernelArg(4, this.dt * 5.0, WebCL.types.FLOAT);
+		vectorVorticityFirstKernel.setKernelArg(4, this.dt * this.vorticityScale, WebCL.types.FLOAT);
 			
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorVorticityFirstKernel, globalWS.length, [], globalWS, localWS, []);
@@ -242,7 +243,7 @@ VectorField.prototype.vorticityConfinement = function() {
 		vectorVorticitySecondKernel.setKernelArg(1, vectorTempBuffer);
 		vectorVorticitySecondKernel.setKernelArg(2, scalarTempBuffer);
 		vectorVorticitySecondKernel.setKernelArg(3, this.dim, WebCL.types.UINT);
-		vectorVorticitySecondKernel.setKernelArg(4, this.dt * 5.0, WebCL.types.FLOAT);
+		vectorVorticitySecondKernel.setKernelArg(4, this.dt * this.vorticityScale, WebCL.types.FLOAT);
 		
 		var start = Date.now();	
 		clQueue.enqueueNDRangeKernel(vectorVorticitySecondKernel, globalWS.length, [], globalWS, localWS, []);

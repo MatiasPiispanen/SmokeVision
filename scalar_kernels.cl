@@ -157,7 +157,7 @@ __kernel void scalarBoundaryDensities(__global float *field, const unsigned int 
 	
 	unsigned int lim = (dim + 2);
 
-	if(i < lim && j < lim && !((i == 0 && (j == 0 || j == lim)) || (i == lim && (j == 0 || j == lim)))) {
+	if(i < lim && j < lim && !((i == 0 && (j == 0 || j == lim-1)) || (i == lim-1 && (j == 0 || j == lim-1)))) {
 		field[index(0, i, j, dim)] = field[index(1, i, j, dim)]; //left boundary
 		field[index(dim+1, i, j, dim)] = field[index(dim, i, j, dim)]; //right boundary
 		field[index(i, 0, j, dim)] = field[index(i, 1, j, dim)]; // bottom boundary
