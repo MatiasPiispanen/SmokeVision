@@ -92,13 +92,13 @@
 			<header>
 				<h1>Fluid Simulation with WebCL</h1>
 			</header>
-				<canvas id="sim_canvas" width="640" height="480"></canvas>
+				<canvas id="sim_canvas" width="320" height="240"></canvas>
 				<button type="button" onclick="reset()">Reset</button>
 				<button type="button" id="stop" onclick="stop()">Stop</button>
 				<p>Canvas resolution:</p>
 				<select id="resolution" onchange="resolutionChanged(this.selectedIndex)">
-				<option>320x240</option>
-				<option selected="selected">640x480</option>
+				<option selected="selected">320x240</option>
+				<option>640x480</option>
 				<option>800x600</option>
 				<option>1024x768</option>
 				</select>
@@ -110,7 +110,8 @@
 				<input type="text" id="ds" onchange="dsChanged(this.value)">
 				<p>Simulation resolution:</p>
 				<select id="resolution" onchange="simResolutionChanged(this.selectedIndex)">
-				<option selected="selected">32x32x32</option>
+				<option selected="selected">16x16x16</option>
+				<option>32x32x32</option>
 				<option>64x64x64</option>
 				<option>96x96x96</option>
 				<option>128x128x128</option>

@@ -8,7 +8,7 @@ var matrixStack = [];
 var canvas;
 var canvasContext;
 var viewer;
-var dim = 32;
+var dim = 16;
 var numCells;
 var shaderProgram;
 var shaderProgram2D;
@@ -416,15 +416,18 @@ function simResolutionChanged(resolution) {
 	running = false;
 	
 	if(resolution == 0) {
-		dim = 32
+		dim = 16
 	}
 	else if(resolution == 1) {
-		dim = 64;
+		dim = 32;
 	}
 	else if(resolution == 2) {
-		dim = 96;
+		dim = 64;
 	}
 	else if(resolution == 3) {
+		dim = 96;
+	}
+	else if(resolution == 4) {
 		dim = 128;
 	}
 	
