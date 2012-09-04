@@ -2,7 +2,7 @@
  * @author Matias Piispanen
  */
 
-var console;
+var timerConsole;
 var selected = 0;
 var matrixStack = [];
 var canvas;
@@ -69,6 +69,7 @@ var vectorSrc;
 var mouseX = 0;
 var mouseY = 0;
 var mouseButton = 0;
+var mousePressed = 0;
 
 var dirX;
 var dirY;
@@ -96,7 +97,7 @@ function webclfluid() {
 	
 	numCells = (dim+2)*(dim+2)*(dim+2);
 	
-	console = document.getElementById("test");
+	timerConsole = document.getElementById("test");
 	canvas = document.getElementById("sim_canvas");
 	
 	document.getElementById("dt").value = dt;
@@ -114,7 +115,7 @@ function webclfluid() {
 		return;
 	}
     
-    shaderProgram2D = simpleSetup( gl, "2d-vertex-shader", "2d-fragment-shader", [ "a_position", "a_texCoord"], [ 0, 0, 0, 0 ], 10000);
+  shaderProgram2D = simpleSetup( gl, "2d-vertex-shader", "2d-fragment-shader", [ "a_position", "a_texCoord"], [ 0, 0, 0, 0 ], 10000);
 	
 	// create scalar and vector fields
 	scalarField = new ScalarField(dim, viscosity, dt, boundaries, box);
@@ -153,8 +154,9 @@ function webclfluid() {
 	setupWebCL();
 	
 	canvas.addEventListener('mousemove', mouse_move, false);
-	canvas.addEventListener('mousedown', mouse_down, false);
-	canvas.addEventListener('mouseup', mouse_up, false);
+	canvas.addEventListener('mouseenter', mouse_enter, false);
+	canvas.addEventListener('mouseleave', mouse_leave, false);
+  mousePressed = 0;
 	
 	running = true;
 	prevTime = Date.now();
@@ -167,10 +169,10 @@ function mouse_move(e) {
 	
 	dirY = (e.layerY - mouseY) * 100;
 	mouseY = e.layerY;
-	
-	if(mouseButton == 1) {
-		var simX = Math.floor(e.layerX * (dim / canvas.width));
-		var simY = Math.floor(e.layerY * (dim / canvas.height));
+
+	if(mousePressed === 1) {
+		var simX = Math.floor(e.layerX * (dim / canvas.clientWidth));
+		var simY = Math.floor(e.layerY * (dim / canvas.clientHeight));
 		
 		if(dirX > 1000.0) {
 			dirX = 1000.0;
@@ -190,10 +192,8 @@ function mouse_move(e) {
 			vectorAddField[vindex(simX,simY,i,1,dim)] = dirY;
 		}
 		
-		var bufSize = 4 * numCells;
-		vectorSourceBuffer = cl.createBuffer(WebCL.CL_MEM_READ_ONLY, bufSize*3);
-		
 		var start = Date.now();
+		var bufSize = 4 * numCells;
 		clQueue.enqueueWriteBuffer(vectorSourceBuffer, true, 0, bufSize*3, vectorAddField, []);
 		clMemTime = Date.now() - start;
 		
@@ -203,27 +203,29 @@ function mouse_move(e) {
 		}
 	}
 	else {
-		var bufSize = 4 * numCells;
-		vectorSourceBuffer = cl.createBuffer(WebCL.CL_MEM_READ_ONLY, bufSize*3);
 		var start = Date.now();
+		var bufSize = 4 * numCells;
 		clQueue.enqueueWriteBuffer(vectorSourceBuffer, true, 0, bufSize*3, vectorAddField, []);
 		clMemTime = Date.now() - start;
 	}
 }
 
-function mouse_up(e) {
-	mouseButton = 0;
+function mouse_enter(e) {
+  mousePressed = 1;
 }
 
-function mouse_down(e) {
-	mouseButton = 1;
+function mouse_leave(e) {
+  mousePressed = 0;
 }
 
 function step() {  
 	if(running == true) {		
 		jsTime = Date.now() - prevTime - clTime - clMemTime - raymarchTime;
 		prevTime = Date.now();
-		console.innerHTML = "WebCL  (ms): " + clTime + " WebCL memory transfers (ms): " + clMemTime +  " Raymarch (ms): " + raymarchTime + " JS (ms): " + jsTime;
+		timerConsole.innerHTML  = "<br>WebCL  (ms): " + clTime;
+    timerConsole.innerHTML += "<br>WebCL memory transfers (ms): " + clMemTime;
+    timerConsole.innerHTML += "<br>Raymarch (ms): " + raymarchTime;
+    timerConsole.innerHTML += "<br>JavaScript (ms): " + jsTime;
 		
 		jsTime = 0;
 		clTime = 0;

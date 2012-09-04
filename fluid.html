@@ -87,41 +87,40 @@
 		}
 	</script>
 	</head>
-	<body onload="webclfluid()">
-		<div>
-			<header>
-				<h1>Fluid Simulation with WebCL</h1>
-			</header>
-				<canvas id="sim_canvas" width="320" height="240"></canvas>
-				<button type="button" onclick="reset()">Reset</button>
-				<button type="button" id="stop" onclick="stop()">Stop</button>
-				<p>Canvas resolution:</p>
-				<select id="resolution" onchange="resolutionChanged(this.selectedIndex)">
+	<body onload="webclfluid()" style="overflow-x:hidden;">
+    <div style="width:80%; float:left;">
+			<h1>Fluid Simulation with WebCL</h1>
+			<canvas id="sim_canvas" width="320" height="240"
+			style="width:90%; max-height:80%; position:relative;
+      border-style:solid; border-color:black;"></canvas>
+    </div>
+    <div style="width:20%; float:right;">
+			<button type="button" onclick="reset()">Reset</button>
+			<button type="button" id="stop" onclick="stop()">Stop</button>
+			<p>Canvas resolution:</p>
+			<select id="resolution" onchange="resolutionChanged(this.selectedIndex)">
 				<option selected="selected">320x240</option>
 				<option>640x480</option>
 				<option>800x600</option>
 				<option>1024x768</option>
-				</select>
-				<p>Time Step</p>
-				<input type="text" id="dt" onchange="dtChanged(this.value)">
-				<p>Viscosity</p>
-				<input type="text" id="viscosity" onchange="viscosityChanged(this.value)">
-				<p>Volume ray marching step length</p>
-				<input type="text" id="ds" onchange="dsChanged(this.value)">
-				<p>Simulation resolution:</p>
-				<select id="resolution" onchange="simResolutionChanged(this.selectedIndex)">
+			</select>
+			<p>Time Step</p>
+			<input type="text" id="dt" onchange="dtChanged(this.value)">
+			<p>Viscosity</p>
+			<input type="text" id="viscosity" onchange="viscosityChanged(this.value)">
+			<p>Volume ray marching step length</p>
+			<input type="text" id="ds" onchange="dsChanged(this.value)">
+			<p>Simulation resolution:</p>
+			<select id="resolution" onchange="simResolutionChanged(this.selectedIndex)">
 				<option selected="selected">16x16x16</option>
 				<option>32x32x32</option>
 				<option>64x64x64</option>
 				<option>96x96x96</option>
 				<option>128x128x128</option>
-				</select>
-				<p>Device:</p>
-				<select id="devices" onchange="deviceChanged(this.selectedIndex)"></select>
-				<p>"Console":</p>
-				<div id="test"></div>
-			<footer>
-			</footer>
-		</div>
+			</select>
+			<p>Device:</p>
+			<select id="devices" onchange="deviceChanged(this.selectedIndex)"></select>
+      <div id="test"></div>
+    </div>
 	</body>
 </html>
