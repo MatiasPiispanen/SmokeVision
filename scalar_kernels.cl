@@ -1,12 +1,12 @@
-static unsigned int index(unsigned int x, unsigned int y, unsigned int z, unsigned int dim) {
+unsigned int index(unsigned int x, unsigned int y, unsigned int z, unsigned int dim) {
 	return (x * (dim+2) * (dim+2)) + (y * (dim+2)) + z;
 }
 
-static unsigned int vindex(unsigned int x, unsigned int y, unsigned int z, unsigned int d, unsigned int dim) {
+unsigned int vindex(unsigned int x, unsigned int y, unsigned int z, unsigned int d, unsigned int dim) {
 	return (3 * index(x, y, z, dim)) + d;
 }
 
-static float interpolate(__global float *field, float xx, float yy, float zz, unsigned int dim) {
+float interpolate(global float *field, float xx, float yy, float zz, unsigned int dim) {
 	int i0, j0, k0, i1, j1, k1;
 	float sx0, sx1, sy0, sy1, sz0, sz1, v0, v1;
 	
@@ -61,7 +61,7 @@ static float interpolate(__global float *field, float xx, float yy, float zz, un
 	return sz0*v0 + sz1*v1;
 }
 
-static float sampleLight(__global float *field, float xx, float yy, float zz, const int dim, const float ds) {
+float sampleLight(global float *field, float xx, float yy, float zz, const int dim, const float ds) {
 	float3 lightPos = {0, dim, 0};
 	float3 target = {xx,yy,zz};
 	
@@ -79,7 +79,7 @@ static float sampleLight(__global float *field, float xx, float yy, float zz, co
 }
 
 
-__kernel void volumeRayMarching(__global unsigned int *pixels, __global float *field, const int width, const int height, const float len, const float cubePos, const float cubeWidth, const int dim, const float ds) {
+kernel void volumeRayMarching(global unsigned int *pixels, global float *field, const int width, const int height, const float len, const float cubePos, const float cubeWidth, const int dim, const float ds) {
 	int x = get_global_id(0);
 	int y = get_global_id(1);
 	
@@ -124,7 +124,7 @@ __kernel void volumeRayMarching(__global unsigned int *pixels, __global float *f
 	}
 }
 
-__kernel void scalarAddField(__global float *field, __global float *srcField, const unsigned int dim, const float dt) {
+kernel void scalarAddField(global float *field, global float *srcField, const unsigned int dim, const float dt) {
 	unsigned int z = get_global_id(0);
 	unsigned int y = get_global_id(1);
 	unsigned int x = get_global_id(2);
@@ -137,7 +137,7 @@ __kernel void scalarAddField(__global float *field, __global float *srcField, co
 	}
 }
 
-__kernel void scalarCopy(__global float *field, __global float *tempField, const unsigned int dim) {
+kernel void scalarCopy(global float *field, global float *tempField, const unsigned int dim) {
 	unsigned int z = get_global_id(0);
 	unsigned int y = get_global_id(1);
 	unsigned int x = get_global_id(2);
@@ -151,7 +151,7 @@ __kernel void scalarCopy(__global float *field, __global float *tempField, const
 	}
 }
 
-__kernel void scalarBoundaryDensities(__global float *field, const unsigned int dim) {
+kernel void scalarBoundaryDensities(global float *field, const unsigned int dim) {
 	unsigned int i = get_global_id(0);
 	unsigned int j = get_global_id(1);
 	
@@ -179,7 +179,7 @@ __kernel void scalarBoundaryDensities(__global float *field, const unsigned int 
 	}
 }
 
-__kernel void scalarDiffusion(__global float *field, __global float *tempField, const unsigned int dim, const float dt, const float viscosity) {
+kernel void scalarDiffusion(global float *field, global float *tempField, const unsigned int dim, const float dt, const float viscosity) {
 	unsigned int z = get_global_id(0);
 	unsigned int y = get_global_id(1);
 	unsigned int x = get_global_id(2);
@@ -196,7 +196,7 @@ __kernel void scalarDiffusion(__global float *field, __global float *tempField, 
 	}
 }
 
-static void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
+void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
 	float3 source = {x,y,z};
 	float3 target = {(*xx),(*yy),(*zz)};
 	float3 path = {(*xx)-x, (*yy)-y, (*zz)-z};
@@ -350,7 +350,7 @@ static void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int d
 	}
 }
 
-__kernel void scalarAdvection(__global float *field, __global float *tempField, __global float *velocityField, const unsigned int dim, const float dt) {
+kernel void scalarAdvection(global float *field, global float *tempField, global float *velocityField, const unsigned int dim, const float dt) {
 	unsigned int x = get_global_id(0);
 	unsigned int y = get_global_id(1);
 	unsigned int z = get_global_id(2);
