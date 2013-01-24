@@ -10,28 +10,28 @@ float interpolate(global float *field, float xx, float yy, float zz, unsigned in
 	int i0, j0, k0, i1, j1, k1;
 	float sx0, sx1, sy0, sy1, sz0, sz1, v0, v1;
 	
-	if(xx < 1.5) {
-		xx = 1.5;
+	if(xx < 1.5f) {
+		xx = 1.5f;
 	}
 		
-	if(yy < 1.5) {
-		yy = 1.5;
+	if(yy < 1.5f) {
+		yy = 1.5f;
 	}
 		
-	if(zz < 1.5) {
-		zz = 1.5;
+	if(zz < 1.5f) {
+		zz = 1.5f;
 	}
 		
-	if(xx > dim + 0.5) {
-		xx = dim + 0.5;
+	if(xx > dim + 0.5f) {
+		xx = dim + 0.5f;
 	}
 		
-	if(yy > dim + 0.5) {
-		yy = dim + 0.5;
+	if(yy > dim + 0.5f) {
+		yy = dim + 0.5f;
 	}
 		
-	if(zz > dim + 0.5) {
-		zz = dim + 0.5;
+	if(zz > dim + 0.5f) {
+		zz = dim + 0.5f;
 	}
 		
 	i0 = (int)xx;
@@ -112,14 +112,14 @@ kernel void volumeRayMarching(global unsigned int *pixels, global float *field, 
 				dT = exp(density * (-ds) * kappa);
 				T *= dT;
 				
-				finalColor += (1.0-dT) * T/kappa * sampleColor * light;
+				finalColor += (1.0f-dT) * T/kappa * sampleColor * light;
 			
 				vec += svec;
 			}
-			finalColor.w = (1.0-dT);
+			finalColor.w = (1.0f-dT);
 		}
 		
-		finalColor = (1-T)*finalColor + T*bgColor;
+		finalColor = (1.0f-T)*finalColor + T*bgColor;
 		pixels[(y*width) + x] = ((uchar)finalColor.w << 24) | ((uchar)finalColor.z << 16) | ((uchar)finalColor.y << 8) | (uchar)finalColor.x;
 	}
 }
@@ -233,7 +233,7 @@ void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
 	if(subpath.x != 0) {
 		subpath /= (subpath.x * dx);
 		
-		result = source + (subpath * 0.5);
+		result = source + (subpath * 0.5f);
 
 		while((int)result.x*dx < (int)target.x*dx && (len == 0 || length(result-source) < len)) {
 			tx = (int)result.x;
@@ -272,7 +272,7 @@ void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
 	if(subpath.y != 0) {
 		subpath /= (subpath.y * dy);
 		
-		result = source + (subpath * 0.5);
+		result = source + (subpath * 0.5f);
 		
 		while((int)result.y*dy < (int)target.y*dy && (len == 0 || length(result-source) < len)) {
 			tx = (int)result.x;
@@ -309,7 +309,7 @@ void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
 	if(subpath.z != 0) {
 		subpath /= (subpath.z * dz);
 		
-		result = source + (subpath * 0.5);
+		result = source + (subpath * 0.5f);
 		
 		while((int)result.z*dz < (int)target.z*dz && (len == 0 || length(result-source) < len)) {
 			tx = (int)result.x;

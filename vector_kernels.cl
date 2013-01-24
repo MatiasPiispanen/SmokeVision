@@ -228,7 +228,7 @@ void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
 	if(subpath.x != 0) {
 		subpath /= (subpath.x * dx);
 		
-		result = source + (subpath * 0.5);
+		result = source + (subpath * 0.5f);
 
 		while((int)result.x*dx < (int)target.x*dx && (len == 0 || length(result-source) < len)) {
 			tx = (int)result.x;
@@ -267,7 +267,7 @@ void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
 	if(subpath.y != 0) {
 		subpath /= (subpath.y * dy);
 		
-		result = source + (subpath * 0.5);
+		result = source + (subpath * 0.5f);
 		
 		while((int)result.y*dy < (int)target.y*dy && (len == 0 || length(result-source) < len)) {
 			tx = (int)result.x;
@@ -304,7 +304,7 @@ void clipPath(int x, int y, int z, float *xx, float *yy, float *zz, int dim) {
 	if(subpath.z != 0) {
 		subpath /= (subpath.z * dz);
 		
-		result = source + (subpath * 0.5);
+		result = source + (subpath * 0.5f);
 		
 		while((int)result.z*dz < (int)target.z*dz && (len == 0 || length(result-source) < len)) {
 			tx = (int)result.x;
