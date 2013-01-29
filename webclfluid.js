@@ -239,56 +239,66 @@ function step() {
 	}
 }  
 
+function clDeviceQuery() {
+  var deviceList = [];
+  var platforms = (window.WebCL && WebCL.getPlatforms()) || [];
+  for (var p=0, i=0; p < platforms.length; p++) {
+    var plat = platforms[p];
+    var devices = plat.getDevices(WebCL.CL_DEVICE_TYPE_ALL);
+    for (var d=0; d < devices.length; d++, i++) {
+      deviceList[i] = { 'device' : devices[d], 
+                        'type' : devices[d].getDeviceInfo(WebCL.CL_DEVICE_TYPE),
+                        'name' : devices[d].getDeviceInfo(WebCL.CL_DEVICE_NAME),
+                        'version' : devices[d].getDeviceInfo(WebCL.CL_DEVICE_VERSION),
+                        'vendor' : plat.getPlatformInfo(WebCL.CL_PLATFORM_VENDOR),
+                        'platform' : plat };
+    }
+  }
+  console.log(deviceList);
+  return deviceList;
+}
+
 function setupWebCL() {
 
-	if(window.WebCL == undefined) {
-		alert("Your browser doesn't support WebCL");
+  var deviceList = clDeviceQuery();
+
+  if (deviceList.length === 0) {
+		alert("Unfortunately your browser/system doesn't support WebCL.");
 		return false;
 	}
 
-	platforms = [];
-	devices = [];
-
-	try {
-		platforms = WebCL.getPlatformIDs();
-
-		var devicelist = "";
-
-		for(var i in platforms) {
-			devices = devices.concat(platforms[i].getDeviceIDs(WebCL.CL_DEVICE_TYPE_ALL));
-		}
-
-		for(var i in devices) {
-			devicelist += "<option value=" + i + ">" + devices[i].getDeviceInfo(WebCL.CL_DEVICE_NAME) + "</option>\n";
+  try {
+    var htmlDeviceList = "";
+		for(var i in deviceList) {
+			htmlDeviceList += "<option value=" + i + ">" + deviceList[i].vendor + ": " + deviceList[i].name + "</option>\n";
 		}
 
 		var deviceselect = document.getElementById("devices");
-		deviceselect.innerHTML = devicelist;
+		deviceselect.innerHTML = htmlDeviceList;
 		deviceselect.selectedIndex = selected;
-		selectedPlatform = platforms[selected];
-		cl = WebCL.createContextFromType([WebCL.CL_CONTEXT_PLATFORM, selectedPlatform], WebCL.CL_DEVICE_TYPE_DEFAULT);
-		devices = cl.getContextInfo(WebCL.CL_CONTEXT_DEVICES);
-		clQueue = cl.createCommandQueue(devices[0], 0);
 
+    var selectedDevice = deviceList[selected].device;
+    var selectedPlatform = deviceList[selected].platform;
+    cl = WebCL.createContext([WebCL.CL_CONTEXT_PLATFORM, selectedPlatform], [selectedDevice]);
+		clQueue = cl.createCommandQueue(selectedDevice, null);
 		allocateBuffers();
 	} catch(err) {
 		alert("Error initializing WebCL");
+    return false;
 	}
-	
+
 	try {
 		scalarProgram = cl.createProgramWithSource(scalarSrc);
-		scalarProgram.buildProgram([devices[0]], "");
-		
-	} catch(e) {
-		alert("Failed to build WebCL program. Error " + scalarProgram.getProgramBuildInfo(devices[0], WebCL.CL_PROGRAM_BUILD_STATUS) + ":  " + scalarProgram.getProgramBuildInfo(devices[selected], WebCL.CL_PROGRAM_BUILD_LOG));
-	}
-	
-	try {
+    var program = scalarProgram;
+		program.buildProgram([selectedDevice], "-Werror -cl-fast-relaxed-math -cl-denorms-are-zero");
+
 		vectorProgram = cl.createProgramWithSource(vectorSrc);
-		vectorProgram.buildProgram([devices[0]], "");
-	}
-	catch(e) {
-		alert("Failed to build WebCL program. Error " + vectorProgram.getProgramBuildInfo(devices[0], WebCL.CL_PROGRAM_BUILD_STATUS) + ":  " + vectorProgram.getProgramBuildInfo(devices[selected], WebCL.CL_PROGRAM_BUILD_LOG));		
+    program = vectorProgram;
+		program.buildProgram([selectedDevice], "-Werror -cl-fast-relaxed-math -cl-denorms-are-zero");
+	} catch(e) {
+		console.log("Failed to build WebCL program. Error " + 
+          program.getProgramBuildInfo(selectedDevice, WebCL.CL_PROGRAM_BUILD_STATUS) + ":  " +
+          program.getProgramBuildInfo(selectedDevice, WebCL.CL_PROGRAM_BUILD_LOG));
 	}
 	
 	scalarAddKernel = scalarProgram.createKernel("scalarAddField");

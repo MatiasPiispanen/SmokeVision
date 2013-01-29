@@ -103,7 +103,7 @@ kernel void volumeRayMarching(global unsigned int *pixels, global float *field, 
 			
 			vec.x += (dim / 2);
 			vec.y += (dim / 2);
-			vec.z = 0.0;
+			vec.z = 0.0f;
 			
 			while(vec.x > 0 && vec.x < dim && vec.y > 0 && vec.y < dim && vec.z < dim) {
 				density = interpolate(field, vec.x, vec.y, vec.z, dim);
@@ -373,28 +373,28 @@ kernel void scalarAdvection(global float *field, global float *tempField, global
 		yy = y-(dt0*velocityField[vy]);
 		zz = z-(dt0*velocityField[vz]);
 			
-		if(xx < 1.5) {
-			xx = 1.5;
+		if(xx < 1.5f) {
+			xx = 1.5f;
 		}
 		
-		if(yy < 1.5) {
-			yy = 1.5;
+		if(yy < 1.5f) {
+			yy = 1.5f;
 		}
 		
-		if(zz < 1.5) {
-			zz = 1.5;
+		if(zz < 1.5f) {
+			zz = 1.5f;
 		}
 		
-		if(xx > dim + 0.5) {
-			xx = dim + 0.5;
+		if(xx > dim + 0.5f) {
+			xx = dim + 0.5f;
 		}
 		
-		if(yy > dim + 0.5) {
-			yy = dim + 0.5;
+		if(yy > dim + 0.5f) {
+			yy = dim + 0.5f;
 		}
 		
-		if(zz > dim + 0.5) {
-			zz = dim + 0.5;
+		if(zz > dim + 0.5f) {
+			zz = dim + 0.5f;
 		}
 		
 		clipPath(x, y, z, &xx, &yy, &zz, dim);

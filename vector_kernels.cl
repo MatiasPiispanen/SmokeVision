@@ -16,7 +16,7 @@ kernel void vectorInitField(global float *field, const unsigned int dim) {
 
 	if(x < lim && y < lim && z < lim) {
 		unsigned int i = index(x, y, z, dim);
-		field[i] = 0.0;
+		field[i] = 0.0f;
 	}
 }
 
@@ -94,13 +94,13 @@ kernel void vectorVorticityConfinementFirst(global float *field, global float *t
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		float x,y,z;
+		float X,Y,Z;
 		
-		x = tempVec[vindex(x,y,z,0,dim)] = ((field[vindex(x,y+1,z,2,dim)] - field[vindex(x,y-1,z,2,dim)]) * 0.5) - ((field[vindex(x,y,z+1,1,dim)] - field[vindex(x,y,z-1,1,dim)]) * 0.5);
-		y = tempVec[vindex(x,y,z,1,dim)] = ((field[vindex(x,y,z+1,0,dim)] - field[vindex(x,y,z-1,0,dim)]) * 0.5) - ((field[vindex(x+1,y,z,2,dim)] - field[vindex(x-1,y,z,2,dim)]) * 0.5);
-		z = tempVec[vindex(x,y,z,2,dim)] = ((field[vindex(x+1,y,z,1,dim)] - field[vindex(x-1,y,z,1,dim)]) * 0.5) - ((field[vindex(x,y+1,z,0,dim)] - field[vindex(x,y-1,z,0,dim)]) * 0.5);
+		X = tempVec[vindex(x,y,z,0,dim)] = ((field[vindex(x,y+1,z,2,dim)] - field[vindex(x,y-1,z,2,dim)]) * 0.5f) - ((field[vindex(x,y,z+1,1,dim)] - field[vindex(x,y,z-1,1,dim)]) * 0.5f);
+		Y = tempVec[vindex(x,y,z,1,dim)] = ((field[vindex(x,y,z+1,0,dim)] - field[vindex(x,y,z-1,0,dim)]) * 0.5f) - ((field[vindex(x+1,y,z,2,dim)] - field[vindex(x-1,y,z,2,dim)]) * 0.5f);
+		Z = tempVec[vindex(x,y,z,2,dim)] = ((field[vindex(x+1,y,z,1,dim)] - field[vindex(x-1,y,z,1,dim)]) * 0.5f) - ((field[vindex(x,y+1,z,0,dim)] - field[vindex(x,y-1,z,0,dim)]) * 0.5f);
 		
-		tempField[index(x,y,z,dim)] = sqrt((x*x) + (y*y) + (z*z));
+		tempField[index(x,y,z,dim)] = sqrt((X*X) + (Y*Y) + (Z*Z));
 	}	
 }
 
@@ -112,10 +112,10 @@ kernel void vectorVorticityConfinementSecond(global float *field, global float *
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		float Nx = (tempField[index(x+1,y,z,dim)] - tempField[index(x-1,y,z,dim)]) * 0.5;
-		float Ny = (tempField[index(x,y+1,z,dim)] - tempField[index(x,y-1,z,dim)]) * 0.5;
-		float Nz = (tempField[index(x,y,z+1,dim)] - tempField[index(x,y,z-1,dim)]) * 0.5;
-		float len1 = 1.0/(sqrt((Nx*Nx) + (Ny*Ny) + (Nz*Nz)) + 0.0000001);
+		float Nx = (tempField[index(x+1,y,z,dim)] - tempField[index(x-1,y,z,dim)]) * 0.5f;
+		float Ny = (tempField[index(x,y+1,z,dim)] - tempField[index(x,y-1,z,dim)]) * 0.5f;
+		float Nz = (tempField[index(x,y,z+1,dim)] - tempField[index(x,y,z-1,dim)]) * 0.5f;
+		float len1 = 1.0f/(sqrt((Nx*Nx) + (Ny*Ny) + (Nz*Nz)) + 0.0000001f);
 		
 		Nx *= len1;
 		Ny *= len1;
@@ -369,28 +369,28 @@ kernel void vectorAdvection(global float *field, global float *tempField, const 
 		zz = z-(dt0*tempField[vz]);
 			
 		//TODO: check if this should be < 0
-		if(xx < 1.5) {
-			xx = 1.5;
+		if(xx < 1.5f) {
+			xx = 1.5f;
 		}
 		
-		if(yy < 1.5) {
-			yy = 1.5;
+		if(yy < 1.5f) {
+			yy = 1.5f;
 		}
 		
-		if(zz < 1.5) {
-			zz = 1.5;
+		if(zz < 1.5f) {
+			zz = 1.5f;
 		}
 		
-		if(xx > dim + 0.5) {
-			xx = dim + 0.5;
+		if(xx > dim + 0.5f) {
+			xx = dim + 0.5f;
 		}
 		
-		if(yy > dim + 0.5) {
-			yy = dim + 0.5;
+		if(yy > dim + 0.5f) {
+			yy = dim + 0.5f;
 		}
 		
-		if(zz > dim + 0.5) {
-			zz = dim + 0.5;
+		if(zz > dim + 0.5f) {
+			zz = dim + 0.5f;
 		}
 		
 		clipPath(x, y, z, &xx, &yy, &zz, dim);
