@@ -87,8 +87,8 @@ var ds = 1.0;
 var running = true;
 
 requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||  
-                            window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;  
-      
+  window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;  
+
 var start = window.mozAnimationStartTime;  // Only supported in FF. Other browsers can use something like Date.now(). 
 
 function webclfluid() {
@@ -114,13 +114,13 @@ function webclfluid() {
 	if(!gl) {
 		return;
 	}
-    
+  
   shaderProgram2D = simpleSetup( gl, "2d-vertex-shader", "2d-fragment-shader", [ "a_position", "a_texCoord"], [ 0, 0, 0, 0 ], 10000);
 	
 	// create scalar and vector fields
 	scalarField = new ScalarField(dim, viscosity, dt, boundaries, box);
 	vectorField = new VectorField(dim, viscosity, dt, boundaries);
-    
+  
 	viewer = new Viewer(gl, shaderProgram, scalarField);
 	
 	// Set up WebCL
@@ -483,11 +483,13 @@ function popMatrix(viewer) {
 }
 
 function getKernel(src) {
-	var kernelSource;
-	var mHttpReq = new XMLHttpRequest();
-    mHttpReq.open("GET", src, false);
-    mHttpReq.send(null);
-    kernelSource = mHttpReq.responseText;
-    
-    return kernelSource;
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", src, false);
+  xhr.send(null);
+  if (xhr.status == 200) {
+    return xhr.responseText;
+  } else {
+    console.log("XMLHttpRequest error!");
+    return null;
+  }
 }
