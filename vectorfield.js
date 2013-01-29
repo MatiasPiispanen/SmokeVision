@@ -108,7 +108,7 @@ VectorField.prototype.diffusion = function() {
 	catch(e) {
 		console.innerHTML = e;
 	}
-		
+	
 	this.setBoundaryVelocities();
 }
 
@@ -119,7 +119,7 @@ VectorField.prototype.projection = function() {
 	try {
 		vectorInitFieldKernel.setKernelArg(0, scalarTempBuffer);
 		vectorInitFieldKernel.setKernelArg(1, this.dim, WebCL.types.UINT);
-	
+	  
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorInitFieldKernel, globalWS.length, [], globalWS, localWS, []);
 		clQueue.finish();
@@ -199,7 +199,7 @@ VectorField.prototype.advection = function() {
 		vectorAdvectionKernel.setKernelArg(1, vectorTempBuffer);
 		vectorAdvectionKernel.setKernelArg(2, this.dim, WebCL.types.UINT);
 		vectorAdvectionKernel.setKernelArg(3, this.dt, WebCL.types.FLOAT);
-			
+		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorAdvectionKernel, globalWS.length, [], globalWS, localWS, []);
 		clQueue.finish();
@@ -208,7 +208,7 @@ VectorField.prototype.advection = function() {
 	catch(e) {
 		console.innerHTML = e;
 	}
-		
+	
 	this.setBoundaryVelocities();
 }
 
@@ -233,7 +233,7 @@ VectorField.prototype.vorticityConfinement = function() {
 		vectorVorticityFirstKernel.setKernelArg(2, scalarTempBuffer);
 		vectorVorticityFirstKernel.setKernelArg(3, this.dim, WebCL.types.UINT);
 		vectorVorticityFirstKernel.setKernelArg(4, this.dt * this.vorticityScale, WebCL.types.FLOAT);
-			
+		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorVorticityFirstKernel, globalWS.length, [], globalWS, localWS, []);
 		clQueue.finish();

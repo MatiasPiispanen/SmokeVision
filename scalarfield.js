@@ -73,16 +73,16 @@ ScalarField.prototype.draw = function(viewer) {
 	
 	shaderProgram2D.positionLocation = gl.getAttribLocation(shaderProgram2D, "a_position");
 	shaderProgram2D.texCoordLocation = gl.getAttribLocation(shaderProgram2D, "a_texCoord");
-  	
-  	var texCoordBuffer = gl.createBuffer();
+  
+  var texCoordBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-	      0.0,  0.0,
-	      1.0,  0.0,
-	      0.0,  1.0,
-	      0.0,  1.0,
-	      1.0,  0.0,
-	      1.0,  1.0]), gl.STATIC_DRAW);
+	  0.0,  0.0,
+	  1.0,  0.0,
+	  0.0,  1.0,
+	  0.0,  1.0,
+	  1.0,  0.0,
+	  1.0,  1.0]), gl.STATIC_DRAW);
 	gl.enableVertexAttribArray(shaderProgram2D.texCoordLocation);
 	gl.vertexAttribPointer(shaderProgram2D.texCoordLocation, 2, gl.FLOAT, false, 0, 0);
 	
@@ -126,12 +126,12 @@ function setRectangle(gl, x, y, width, height) {
   var y1 = y;
   var y2 = y + height;
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-     x1, y1,
-     x2, y1,
-     x1, y2,
-     x1, y2,
-     x2, y1,
-     x2, y2]), gl.STATIC_DRAW);
+    x1, y1,
+    x2, y1,
+    x1, y2,
+    x1, y2,
+    x2, y1,
+    x2, y2]), gl.STATIC_DRAW);
 }
 
 ScalarField.prototype.getField = function() {
@@ -224,7 +224,7 @@ ScalarField.prototype.advection = function() {
 		scalarAdvectionKernel.setKernelArg(2, vectorBuffer);
 		scalarAdvectionKernel.setKernelArg(3, this.dim, WebCL.types.UINT);
 		scalarAdvectionKernel.setKernelArg(4, this.dt, WebCL.types.FLOAT);
-			
+		
 		var start = Date.now();	
 		clQueue.enqueueNDRangeKernel(scalarAdvectionKernel, globalWS.length, [], globalWS, localWS, []);
 		clQueue.finish();
@@ -233,7 +233,7 @@ ScalarField.prototype.advection = function() {
 	catch(e) {
 		console.innerHTML = e;
 	}
-		
+	
 	this.setBoundaryDensities();
 }
 
