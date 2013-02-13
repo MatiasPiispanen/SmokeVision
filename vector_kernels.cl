@@ -1,9 +1,9 @@
-unsigned int index(unsigned int x, unsigned int y, unsigned int z, unsigned int dim) {
+unsigned int idx(unsigned int x, unsigned int y, unsigned int z, unsigned int dim) {
 	return (x * (dim+2) * (dim+2)) + (y * (dim+2)) + z;
 }
 
-unsigned int vindex(unsigned int x, unsigned int y, unsigned int z, unsigned int d, unsigned int dim) {
-	return (3 * index(x, y, z, dim)) + d;
+unsigned int vidx(unsigned int x, unsigned int y, unsigned int z, unsigned int d, unsigned int dim) {
+	return (3 * idx(x, y, z, dim)) + d;
 }
 
 // Initializes the scalar temp fields
@@ -15,7 +15,7 @@ kernel void vectorInitField(global float *field, const unsigned int dim) {
 	unsigned int lim = (dim + 2);
 
 	if(x < lim && y < lim && z < lim) {
-		unsigned int i = index(x, y, z, dim);
+		unsigned int i = idx(x, y, z, dim);
 		field[i] = 0.0f;
 	}
 }
@@ -28,9 +28,9 @@ kernel void vectorAddField(global float *field, global float *srcField, const un
 	unsigned int lim = (dim + 2);
 
 	if(x < lim && y < lim && z < lim) {
-		unsigned int i = vindex(x, y, z, 0, dim);
-		unsigned int j = vindex(x, y, z, 1, dim);
-		unsigned int k = vindex(x, y, z, 2, dim);
+		unsigned int i = vidx(x, y, z, 0, dim);
+		unsigned int j = vidx(x, y, z, 1, dim);
+		unsigned int k = vidx(x, y, z, 2, dim);
 		field[i] += srcField[i] * dt;
 		field[j] += srcField[j] * dt;
 		field[k] += srcField[k] * dt;
@@ -45,9 +45,9 @@ kernel void vectorCopy(global float *field, global float *tempField, const unsig
 	unsigned int lim = (dim + 2);
 
 	if(x < lim && y < lim && z < lim) {
-		unsigned int i = vindex(x, y, z, 0, dim);
-		unsigned int j = vindex(x, y, z, 1, dim);
-		unsigned int k = vindex(x, y, z, 2, dim);
+		unsigned int i = vidx(x, y, z, 0, dim);
+		unsigned int j = vidx(x, y, z, 1, dim);
+		unsigned int k = vidx(x, y, z, 2, dim);
 		
 		tempField[i] = field[i];
 		tempField[j] = field[j];
@@ -63,25 +63,25 @@ kernel void vectorBoundaries(global float *field, const unsigned int dim) {
 	unsigned int lim = (dim + 1);
 
 	if(i < lim+1 && j < lim+1 && !((i == 0 && (j == 0 || j == lim)) || (i == lim && (j == 0 || j == lim)))) {
-		field[vindex(0, i, j, 0, dim)] = field[vindex(1, i, j, 0, dim)] * (-1); //left boundary
-		field[vindex(dim+1, i, j, 0, dim)] = field[vindex(dim, i, j, 0, dim)]* (-1); //right boundary
-		field[vindex(i, 0, j, 1, dim)] = field[vindex(i, 1, j, 1, dim)]* (-1); // bottom boundary
-		field[vindex(i, dim+1, j, 1, dim)] = field[vindex(i, dim, j, 1, dim)]* (-1); // top boundary
-		field[vindex(i, j, 0, 2, dim)] = field[vindex(i, j, 1, 2, dim)]* (-1); // back boundary
-		field[vindex(i, j, dim+1, 2, dim)] = field[vindex(i, j, dim, 2, dim)]* (-1); // top boundary
+		field[vidx(0, i, j, 0, dim)] = field[vidx(1, i, j, 0, dim)] * (-1); //left boundary
+		field[vidx(dim+1, i, j, 0, dim)] = field[vidx(dim, i, j, 0, dim)]* (-1); //right boundary
+		field[vidx(i, 0, j, 1, dim)] = field[vidx(i, 1, j, 1, dim)]* (-1); // bottom boundary
+		field[vidx(i, dim+1, j, 1, dim)] = field[vidx(i, dim, j, 1, dim)]* (-1); // top boundary
+		field[vidx(i, j, 0, 2, dim)] = field[vidx(i, j, 1, 2, dim)]* (-1); // back boundary
+		field[vidx(i, j, dim+1, 2, dim)] = field[vidx(i, j, dim, 2, dim)]* (-1); // top boundary
 	}
 	
 	// Corner velocities
 	if(i == 0 && j == 0) {
 		for(int d = 0; d < 3; d++) {
-			field[vindex(0,0,0,d,dim)] = (field[vindex(1,0,0,d,dim)] + field[vindex(0,1,0,d,dim)] + field[vindex(0,0,1,d,dim)]) / 3;
-			field[vindex(0,dim+1,0,d,dim)] = (field[vindex(1,dim+1,0,d,dim)] + field[vindex(0,dim,0,d,dim)] + field[vindex(0,dim+1,1,d,dim)]) / 3;
-			field[vindex(dim+1,0,0,d,dim)] = (field[vindex(dim,0,0,d,dim)] + field[vindex(dim+1,1,0,d,dim)] + field[vindex(dim+1,0,1,d,dim)]) / 3;
-			field[vindex(dim+1,dim+1,0,d,dim)] = (field[vindex(dim,dim+1,0,d,dim)] + field[vindex(dim+1,dim,0,d,dim)] + field[vindex(dim+1,dim+1,1,d,dim)]) / 3;
-			field[vindex(0,0,dim+1,d,dim)] = (field[vindex(1,0,dim+1,d,dim)] + field[vindex(0,1,dim+1,d,dim)] + field[vindex(0,0,dim,d,dim)]) / 3;
-			field[vindex(0,dim+1,dim+1,d,dim)] = (field[vindex(1,dim+1,dim+1,d,dim)] + field[vindex(0,dim,dim+1,d,dim)] + field[vindex(0,dim+1,dim,d,dim)]) / 3;
-			field[vindex(dim+1,0,dim+1,d,dim)] = (field[vindex(dim,0,dim+1,d,dim)] + field[vindex(dim+1,1,dim+1,d,dim)] + field[vindex(dim+1,0,dim,d,dim)]) / 3;
-			field[vindex(dim+1,dim+1,dim+1,d,dim)] = (field[vindex(dim,dim+1,dim+1,d,dim)] + field[vindex(dim+1,dim,dim+1,d,dim)] + field[vindex(dim+1,dim+1,dim,d,dim)]) / 3;
+			field[vidx(0,0,0,d,dim)] = (field[vidx(1,0,0,d,dim)] + field[vidx(0,1,0,d,dim)] + field[vidx(0,0,1,d,dim)]) / 3;
+			field[vidx(0,dim+1,0,d,dim)] = (field[vidx(1,dim+1,0,d,dim)] + field[vidx(0,dim,0,d,dim)] + field[vidx(0,dim+1,1,d,dim)]) / 3;
+			field[vidx(dim+1,0,0,d,dim)] = (field[vidx(dim,0,0,d,dim)] + field[vidx(dim+1,1,0,d,dim)] + field[vidx(dim+1,0,1,d,dim)]) / 3;
+			field[vidx(dim+1,dim+1,0,d,dim)] = (field[vidx(dim,dim+1,0,d,dim)] + field[vidx(dim+1,dim,0,d,dim)] + field[vidx(dim+1,dim+1,1,d,dim)]) / 3;
+			field[vidx(0,0,dim+1,d,dim)] = (field[vidx(1,0,dim+1,d,dim)] + field[vidx(0,1,dim+1,d,dim)] + field[vidx(0,0,dim,d,dim)]) / 3;
+			field[vidx(0,dim+1,dim+1,d,dim)] = (field[vidx(1,dim+1,dim+1,d,dim)] + field[vidx(0,dim,dim+1,d,dim)] + field[vidx(0,dim+1,dim,d,dim)]) / 3;
+			field[vidx(dim+1,0,dim+1,d,dim)] = (field[vidx(dim,0,dim+1,d,dim)] + field[vidx(dim+1,1,dim+1,d,dim)] + field[vidx(dim+1,0,dim,d,dim)]) / 3;
+			field[vidx(dim+1,dim+1,dim+1,d,dim)] = (field[vidx(dim,dim+1,dim+1,d,dim)] + field[vidx(dim+1,dim,dim+1,d,dim)] + field[vidx(dim+1,dim+1,dim,d,dim)]) / 3;
 		}
 	}
 }
@@ -96,11 +96,11 @@ kernel void vectorVorticityConfinementFirst(global float *field, global float *t
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
 		float X,Y,Z;
 		
-		X = tempVec[vindex(x,y,z,0,dim)] = ((field[vindex(x,y+1,z,2,dim)] - field[vindex(x,y-1,z,2,dim)]) * 0.5f) - ((field[vindex(x,y,z+1,1,dim)] - field[vindex(x,y,z-1,1,dim)]) * 0.5f);
-		Y = tempVec[vindex(x,y,z,1,dim)] = ((field[vindex(x,y,z+1,0,dim)] - field[vindex(x,y,z-1,0,dim)]) * 0.5f) - ((field[vindex(x+1,y,z,2,dim)] - field[vindex(x-1,y,z,2,dim)]) * 0.5f);
-		Z = tempVec[vindex(x,y,z,2,dim)] = ((field[vindex(x+1,y,z,1,dim)] - field[vindex(x-1,y,z,1,dim)]) * 0.5f) - ((field[vindex(x,y+1,z,0,dim)] - field[vindex(x,y-1,z,0,dim)]) * 0.5f);
+		X = tempVec[vidx(x,y,z,0,dim)] = ((field[vidx(x,y+1,z,2,dim)] - field[vidx(x,y-1,z,2,dim)]) * 0.5f) - ((field[vidx(x,y,z+1,1,dim)] - field[vidx(x,y,z-1,1,dim)]) * 0.5f);
+		Y = tempVec[vidx(x,y,z,1,dim)] = ((field[vidx(x,y,z+1,0,dim)] - field[vidx(x,y,z-1,0,dim)]) * 0.5f) - ((field[vidx(x+1,y,z,2,dim)] - field[vidx(x-1,y,z,2,dim)]) * 0.5f);
+		Z = tempVec[vidx(x,y,z,2,dim)] = ((field[vidx(x+1,y,z,1,dim)] - field[vidx(x-1,y,z,1,dim)]) * 0.5f) - ((field[vidx(x,y+1,z,0,dim)] - field[vidx(x,y-1,z,0,dim)]) * 0.5f);
 		
-		tempField[index(x,y,z,dim)] = sqrt((X*X) + (Y*Y) + (Z*Z));
+		tempField[idx(x,y,z,dim)] = sqrt((X*X) + (Y*Y) + (Z*Z));
 	}	
 }
 
@@ -112,18 +112,18 @@ kernel void vectorVorticityConfinementSecond(global float *field, global float *
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		float Nx = (tempField[index(x+1,y,z,dim)] - tempField[index(x-1,y,z,dim)]) * 0.5f;
-		float Ny = (tempField[index(x,y+1,z,dim)] - tempField[index(x,y-1,z,dim)]) * 0.5f;
-		float Nz = (tempField[index(x,y,z+1,dim)] - tempField[index(x,y,z-1,dim)]) * 0.5f;
+		float Nx = (tempField[idx(x+1,y,z,dim)] - tempField[idx(x-1,y,z,dim)]) * 0.5f;
+		float Ny = (tempField[idx(x,y+1,z,dim)] - tempField[idx(x,y-1,z,dim)]) * 0.5f;
+		float Nz = (tempField[idx(x,y,z+1,dim)] - tempField[idx(x,y,z-1,dim)]) * 0.5f;
 		float len1 = 1.0f/(sqrt((Nx*Nx) + (Ny*Ny) + (Nz*Nz)) + 0.0000001f);
 		
 		Nx *= len1;
 		Ny *= len1;
 		Nz *= len1;
 		
-		field[vindex(x,y,z,0,dim)] += ((Ny*tempVec[vindex(x,y,z,2,dim)]) - (Nz*tempVec[vindex(x,y,z,1,dim)])) * dt0;
-		field[vindex(x,y,z,1,dim)] += ((Ny*tempVec[vindex(x,y,z,0,dim)]) - (Nz*tempVec[vindex(x,y,z,2,dim)])) * dt0 ;
-		field[vindex(x,y,z,2,dim)] += ((Ny*tempVec[vindex(x,y,z,1,dim)]) - (Nz*tempVec[vindex(x,y,z,0,dim)])) * dt0;
+		field[vidx(x,y,z,0,dim)] += ((Ny*tempVec[vidx(x,y,z,2,dim)]) - (Nz*tempVec[vidx(x,y,z,1,dim)])) * dt0;
+		field[vidx(x,y,z,1,dim)] += ((Ny*tempVec[vidx(x,y,z,0,dim)]) - (Nz*tempVec[vidx(x,y,z,2,dim)])) * dt0 ;
+		field[vidx(x,y,z,2,dim)] += ((Ny*tempVec[vidx(x,y,z,1,dim)]) - (Nz*tempVec[vidx(x,y,z,0,dim)])) * dt0;
 	}
 }
 
@@ -135,11 +135,11 @@ kernel void vectorProjectionFirst(global float *field, global float *tempField, 
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		unsigned int i = index(x,y,z,dim);
+		unsigned int i = idx(x,y,z,dim);
 		
-		tempSecondField[i] = (-h) * ((field[vindex(x+1,y,z,0,dim)] - field[vindex(x-1,y,z,0,dim)]) +
-									 (field[vindex(x,y+1,z,1,dim)] - field[vindex(x,y-1,z,1,dim)]) + 
-									 (field[vindex(x,y,z+1,2,dim)] - field[vindex(x,y,z-1,2,dim)])) / 3;
+		tempSecondField[i] = (-h) * ((field[vidx(x+1,y,z,0,dim)] - field[vidx(x-1,y,z,0,dim)]) +
+									 (field[vidx(x,y+1,z,1,dim)] - field[vidx(x,y-1,z,1,dim)]) + 
+									 (field[vidx(x,y,z+1,2,dim)] - field[vidx(x,y,z-1,2,dim)])) / 3;
 	}	
 }
 
@@ -151,10 +151,10 @@ kernel void vectorProjectionSecond(global float *field, global float *tempField,
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		tempField[index(x,y,z,dim)] = (tempSecondField[index(x,y,z,dim)] + 
-									   tempField[index(x-1,y,z,dim)] + tempField[index(x+1,y,z,dim)] +
-									   tempField[index(x,y-1,z,dim)] + tempField[index(x,y+1,z,dim)] +
-									   tempField[index(x,y,z-1,dim)] + tempField[index(x,y,z+1,dim)]) / 6;
+		tempField[idx(x,y,z,dim)] = (tempSecondField[idx(x,y,z,dim)] + 
+									   tempField[idx(x-1,y,z,dim)] + tempField[idx(x+1,y,z,dim)] +
+									   tempField[idx(x,y-1,z,dim)] + tempField[idx(x,y+1,z,dim)] +
+									   tempField[idx(x,y,z-1,dim)] + tempField[idx(x,y,z+1,dim)]) / 6;
 	}	
 }
 
@@ -166,9 +166,9 @@ kernel void vectorProjectionThird(global float *field, global float *tempField, 
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		field[vindex(x,y,z,0,dim)] -= (tempField[index(x+1,y,z,dim)] - tempField[index(x-1,y,z,dim)]) / 3 / h;
-		field[vindex(x,y,z,1,dim)] -= (tempField[index(x,y+1,z,dim)] - tempField[index(x,y-1,z,dim)]) / 3 / h;
-		field[vindex(x,y,z,2,dim)] -= (tempField[index(x,y,z+1,dim)] - tempField[index(x,y,z-1,dim)]) / 3 / h;
+		field[vidx(x,y,z,0,dim)] -= (tempField[idx(x+1,y,z,dim)] - tempField[idx(x-1,y,z,dim)]) / 3 / h;
+		field[vidx(x,y,z,1,dim)] -= (tempField[idx(x,y+1,z,dim)] - tempField[idx(x,y-1,z,dim)]) / 3 / h;
+		field[vidx(x,y,z,2,dim)] -= (tempField[idx(x,y,z+1,dim)] - tempField[idx(x,y,z-1,dim)]) / 3 / h;
 	}	
 }
 
@@ -183,10 +183,10 @@ kernel void vectorDiffusion(global float *field, global float *tempField, const 
 		float a = dt * viscosity * dim * dim * dim;
 		
 		for(int d = 0; d < 3; d++) {
-			field[vindex(x,y,z,d,dim)] = (tempField[vindex(x,y,z,d,dim)] + 
-										 a*(field[vindex(x-1,y,z,d,dim)] + field[vindex(x+1,y,z,d,dim)]
-										  + field[vindex(x,y-1,z,d,dim)] + field[vindex(x,y+1,z,d,dim)]
-										  + field[vindex(x,y,z-1,d,dim)] + field[vindex(x,y,z+1,d,dim)])) / (1+6*a);
+			field[vidx(x,y,z,d,dim)] = (tempField[vidx(x,y,z,d,dim)] + 
+										 a*(field[vidx(x-1,y,z,d,dim)] + field[vidx(x+1,y,z,d,dim)]
+										  + field[vidx(x,y-1,z,d,dim)] + field[vidx(x,y+1,z,d,dim)]
+										  + field[vidx(x,y,z-1,d,dim)] + field[vidx(x,y,z+1,d,dim)])) / (1+6*a);
 		}
 	}
 }
@@ -353,10 +353,10 @@ kernel void vectorAdvection(global float *field, global float *tempField, const 
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		unsigned int i = vindex(x, y, z, 0, dim);
-		unsigned int vx = vindex(x, y, z, 0, dim);
-		unsigned int vy = vindex(x, y, z, 1, dim);
-		unsigned int vz = vindex(x, y, z, 2, dim);
+		unsigned int i = vidx(x, y, z, 0, dim);
+		unsigned int vx = vidx(x, y, z, 0, dim);
+		unsigned int vy = vidx(x, y, z, 1, dim);
+		unsigned int vz = vidx(x, y, z, 2, dim);
 
 		int i0, j0, k0, i1, j1, k1;
 		float sx0, sx1, sy0, sy1, sz0, sz1, v0, v1;
@@ -414,15 +414,14 @@ kernel void vectorAdvection(global float *field, global float *tempField, const 
 		sz0 = 1-sz1;
 		
 		for(int d = 0; d < 3; d++) {	
-			v0 = sx0 * (sy0 * tempField[vindex(i0,j0,k0,d,dim)] + sy1 * tempField[vindex(i0,j1,k0,d,dim)]) +
-			 sx1 * (sy0 * tempField[vindex(i1,j0,k0,d,dim)] + sy1 * tempField[vindex(i1,j1,k0,d,dim)]);
+			v0 = sx0 * (sy0 * tempField[vidx(i0,j0,k0,d,dim)] + sy1 * tempField[vidx(i0,j1,k0,d,dim)]) +
+			 sx1 * (sy0 * tempField[vidx(i1,j0,k0,d,dim)] + sy1 * tempField[vidx(i1,j1,k0,d,dim)]);
 				 
-			v1 = sx0 * (sy0 * tempField[vindex(i0,j0,k1,d,dim)] + sy1 * tempField[vindex(i0,j1,k1,d,dim)]) +
-			 sx1 * (sy0 * tempField[vindex(i1,j0,k1,d,dim)] + sy1 * tempField[vindex(i1,j1,k1,d,dim)]);
+			v1 = sx0 * (sy0 * tempField[vidx(i0,j0,k1,d,dim)] + sy1 * tempField[vidx(i0,j1,k1,d,dim)]) +
+			 sx1 * (sy0 * tempField[vidx(i1,j0,k1,d,dim)] + sy1 * tempField[vidx(i1,j1,k1,d,dim)]);
 				 
-			field[vindex(x, y, z, d, dim)] = sz0*v0 + sz1*v1;	
+			field[vidx(x, y, z, d, dim)] = sz0*v0 + sz1*v1;	
 		}
 	}
 }
-
 

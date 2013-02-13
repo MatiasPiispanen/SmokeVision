@@ -1,9 +1,9 @@
-unsigned int index(unsigned int x, unsigned int y, unsigned int z, unsigned int dim) {
+unsigned int idx(unsigned int x, unsigned int y, unsigned int z, unsigned int dim) {
 	return (x * (dim+2) * (dim+2)) + (y * (dim+2)) + z;
 }
 
-unsigned int vindex(unsigned int x, unsigned int y, unsigned int z, unsigned int d, unsigned int dim) {
-	return (3 * index(x, y, z, dim)) + d;
+unsigned int vidx(unsigned int x, unsigned int y, unsigned int z, unsigned int d, unsigned int dim) {
+	return (3 * idx(x, y, z, dim)) + d;
 }
 
 float interpolate(global float *field, float xx, float yy, float zz, unsigned int dim) {
@@ -52,11 +52,11 @@ float interpolate(global float *field, float xx, float yy, float zz, unsigned in
 	sz1 = zz -k0;
 	sz0 = 1-sz1;
 			
-	v0 = sx0 * (sy0 * field[index(i0,j0,k0,dim)] + sy1 * field[index(i0,j1,k0,dim)]) +
-		 sx1 * (sy0 * field[index(i1,j0,k0,dim)] + sy1 * field[index(i1,j1,k0,dim)]);
+	v0 = sx0 * (sy0 * field[idx(i0,j0,k0,dim)] + sy1 * field[idx(i0,j1,k0,dim)]) +
+		 sx1 * (sy0 * field[idx(i1,j0,k0,dim)] + sy1 * field[idx(i1,j1,k0,dim)]);
 				 
-	v1 = sx0 * (sy0 * field[index(i0,j0,k1,dim)] + sy1 * field[index(i0,j1,k1,dim)]) +
-		 sx1 * (sy0 * field[index(i1,j0,k1,dim)] + sy1 * field[index(i1,j1,k1,dim)]);
+	v1 = sx0 * (sy0 * field[idx(i0,j0,k1,dim)] + sy1 * field[idx(i0,j1,k1,dim)]) +
+		 sx1 * (sy0 * field[idx(i1,j0,k1,dim)] + sy1 * field[idx(i1,j1,k1,dim)]);
 				 
 	return sz0*v0 + sz1*v1;
 }
@@ -132,7 +132,7 @@ kernel void scalarAddField(global float *field, global float *srcField, const un
 	unsigned int lim = (dim + 2);
 
 	if(x < lim && y < lim && z < lim) {
-		unsigned int i = index(x, y, z, dim);
+		unsigned int i = idx(x, y, z, dim);
 		field[i] += srcField[i] * dt;
 	}
 }
@@ -145,7 +145,7 @@ kernel void scalarCopy(global float *field, global float *tempField, const unsig
 	unsigned int lim = (dim + 2);
 
 	if(x < lim && y < lim && z < lim) {
-		unsigned int i = index(x, y, z, dim);
+		unsigned int i = idx(x, y, z, dim);
 		
 		tempField[i] = field[i];
 	}
@@ -158,24 +158,24 @@ kernel void scalarBoundaryDensities(global float *field, const unsigned int dim)
 	unsigned int lim = (dim + 2);
 
 	if(i < lim && j < lim && !((i == 0 && (j == 0 || j == lim-1)) || (i == lim-1 && (j == 0 || j == lim-1)))) {
-		field[index(0, i, j, dim)] = field[index(1, i, j, dim)]; //left boundary
-		field[index(dim+1, i, j, dim)] = field[index(dim, i, j, dim)]; //right boundary
-		field[index(i, 0, j, dim)] = field[index(i, 1, j, dim)]; // bottom boundary
-		field[index(i, dim+1, j, dim)] = field[index(i, dim, j, dim)]; // top boundary
-		field[index(i, j, 0, dim)] = field[index(i, j, 1, dim)]; // back boundary
-		field[index(i, j, dim+1, dim)] = field[index(i, j, dim, dim)]; // top boundary
+		field[idx(0, i, j, dim)] = field[idx(1, i, j, dim)]; //left boundary
+		field[idx(dim+1, i, j, dim)] = field[idx(dim, i, j, dim)]; //right boundary
+		field[idx(i, 0, j, dim)] = field[idx(i, 1, j, dim)]; // bottom boundary
+		field[idx(i, dim+1, j, dim)] = field[idx(i, dim, j, dim)]; // top boundary
+		field[idx(i, j, 0, dim)] = field[idx(i, j, 1, dim)]; // back boundary
+		field[idx(i, j, dim+1, dim)] = field[idx(i, j, dim, dim)]; // top boundary
 	}
 	
 	// Corner densities
 	if(i == 0 && j == 0) {
-		field[index(0,0,0,dim)] = (field[index(1,0,0,dim)] + field[index(0,1,0,dim)] + field[index(0,0,1,dim)]) / 3;
-		field[index(0,dim+1,0,dim)] = (field[index(1,dim+1,0,dim)] + field[index(0,dim,0,dim)] + field[index(0,dim+1,1,dim)]) / 3;
-		field[index(dim+1,0,0,dim)] = (field[index(dim,0,0,dim)] + field[index(dim+1,1,0,dim)] + field[index(dim+1,0,1,dim)]) / 3;
-		field[index(dim+1,dim+1,0,dim)] = (field[index(dim,dim+1,0,dim)] + field[index(dim+1,dim,0,dim)] + field[index(dim+1,dim+1,1,dim)]) / 3;
-		field[index(0,0,dim+1,dim)] = (field[index(1,0,dim+1,dim)] + field[index(0,1,dim+1,dim)] + field[index(0,0,dim,dim)]) / 3;
-		field[index(0,dim+1,dim+1,dim)] = (field[index(1,dim+1,dim+1,dim)] + field[index(0,dim,dim+1,dim)] + field[index(0,dim+1,dim,dim)]) / 3;
-		field[index(dim+1,0,dim+1,dim)] = (field[index(dim,0,dim+1,dim)] + field[index(dim+1,1,dim+1,dim)] + field[index(dim+1,0,dim,dim)]) / 3;
-		field[index(dim+1,dim+1,dim+1,dim)] = (field[index(dim,dim+1,dim+1,dim)] + field[index(dim+1,dim,dim+1,dim)] + field[index(dim+1,dim+1,dim,dim)]) / 3;
+		field[idx(0,0,0,dim)] = (field[idx(1,0,0,dim)] + field[idx(0,1,0,dim)] + field[idx(0,0,1,dim)]) / 3;
+		field[idx(0,dim+1,0,dim)] = (field[idx(1,dim+1,0,dim)] + field[idx(0,dim,0,dim)] + field[idx(0,dim+1,1,dim)]) / 3;
+		field[idx(dim+1,0,0,dim)] = (field[idx(dim,0,0,dim)] + field[idx(dim+1,1,0,dim)] + field[idx(dim+1,0,1,dim)]) / 3;
+		field[idx(dim+1,dim+1,0,dim)] = (field[idx(dim,dim+1,0,dim)] + field[idx(dim+1,dim,0,dim)] + field[idx(dim+1,dim+1,1,dim)]) / 3;
+		field[idx(0,0,dim+1,dim)] = (field[idx(1,0,dim+1,dim)] + field[idx(0,1,dim+1,dim)] + field[idx(0,0,dim,dim)]) / 3;
+		field[idx(0,dim+1,dim+1,dim)] = (field[idx(1,dim+1,dim+1,dim)] + field[idx(0,dim,dim+1,dim)] + field[idx(0,dim+1,dim,dim)]) / 3;
+		field[idx(dim+1,0,dim+1,dim)] = (field[idx(dim,0,dim+1,dim)] + field[idx(dim+1,1,dim+1,dim)] + field[idx(dim+1,0,dim,dim)]) / 3;
+		field[idx(dim+1,dim+1,dim+1,dim)] = (field[idx(dim,dim+1,dim+1,dim)] + field[idx(dim+1,dim,dim+1,dim)] + field[idx(dim+1,dim+1,dim,dim)]) / 3;
 	}
 }
 
@@ -188,11 +188,11 @@ kernel void scalarDiffusion(global float *field, global float *tempField, const 
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
 		float a = dt * viscosity * dim * dim * dim;
-		unsigned int i = index(x, y, z, dim);
+		unsigned int i = idx(x, y, z, dim);
 		
-		field[i] = (tempField[i] + a*(field[index(x-1,y,z,dim)] + field[index(x+1,y,z,dim)] +
-									  field[index(x,y-1,z,dim)] + field[index(x,y+1,z,dim)] +
-									  field[index(x,y,z-1,dim)] + field[index(x,y,z+1,dim)])) / (1+6*a);
+		field[i] = (tempField[i] + a*(field[idx(x-1,y,z,dim)] + field[idx(x+1,y,z,dim)] +
+									  field[idx(x,y-1,z,dim)] + field[idx(x,y+1,z,dim)] +
+									  field[idx(x,y,z-1,dim)] + field[idx(x,y,z+1,dim)])) / (1+6*a);
 	}
 }
 
@@ -358,10 +358,10 @@ kernel void scalarAdvection(global float *field, global float *tempField, global
 	unsigned int lim = (dim + 1);
 
 	if(x > 0 && x < lim && y > 0 && y < lim && z > 0 && z < lim) {
-		unsigned int i = index(x, y, z, dim);
-		unsigned int vx = vindex(x, y, z, 0, dim);
-		unsigned int vy = vindex(x, y, z, 1, dim);
-		unsigned int vz = vindex(x, y, z, 2, dim);
+		unsigned int i = idx(x, y, z, dim);
+		unsigned int vx = vidx(x, y, z, 0, dim);
+		unsigned int vy = vidx(x, y, z, 1, dim);
+		unsigned int vz = vidx(x, y, z, 2, dim);
 
 		int i0, j0, k0, i1, j1, k1;
 		float sx0, sx1, sy0, sy1, sz0, sz1, v0, v1;
@@ -417,13 +417,12 @@ kernel void scalarAdvection(global float *field, global float *tempField, global
 		sz1 = zz -k0;
 		sz0 = 1-sz1;
 			
-		v0 = sx0 * (sy0 * tempField[index(i0,j0,k0,dim)] + sy1 * tempField[index(i0,j1,k0,dim)]) +
-			 sx1 * (sy0 * tempField[index(i1,j0,k0,dim)] + sy1 * tempField[index(i1,j1,k0,dim)]);
+		v0 = sx0 * (sy0 * tempField[idx(i0,j0,k0,dim)] + sy1 * tempField[idx(i0,j1,k0,dim)]) +
+			 sx1 * (sy0 * tempField[idx(i1,j0,k0,dim)] + sy1 * tempField[idx(i1,j1,k0,dim)]);
 				 
-		v1 = sx0 * (sy0 * tempField[index(i0,j0,k1,dim)] + sy1 * tempField[index(i0,j1,k1,dim)]) +
-			 sx1 * (sy0 * tempField[index(i1,j0,k1,dim)] + sy1 * tempField[index(i1,j1,k1,dim)]);
+		v1 = sx0 * (sy0 * tempField[idx(i0,j0,k1,dim)] + sy1 * tempField[idx(i0,j1,k1,dim)]) +
+			 sx1 * (sy0 * tempField[idx(i1,j0,k1,dim)] + sy1 * tempField[idx(i1,j1,k1,dim)]);
 				 
 		field[i] = sz0*v0 + sz1*v1;	
 	}
 }
-

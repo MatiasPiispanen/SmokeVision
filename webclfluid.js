@@ -290,11 +290,11 @@ function setupWebCL() {
 	try {
 		scalarProgram = cl.createProgramWithSource(scalarSrc);
     var program = scalarProgram;
-		program.buildProgram([selectedDevice], "-Werror -cl-fast-relaxed-math -cl-denorms-are-zero");
+		program.buildProgram([selectedDevice], "-cl-fast-relaxed-math -cl-denorms-are-zero");
 
 		vectorProgram = cl.createProgramWithSource(vectorSrc);
     program = vectorProgram;
-		program.buildProgram([selectedDevice], "-Werror -cl-fast-relaxed-math -cl-denorms-are-zero");
+		program.buildProgram([selectedDevice], "-cl-fast-relaxed-math -cl-denorms-are-zero");
 	} catch(e) {
 		console.log("Failed to build WebCL program. Error " + 
           program.getProgramBuildInfo(selectedDevice, WebCL.CL_PROGRAM_BUILD_STATUS) + ":  " +
