@@ -39,7 +39,7 @@ VectorField.prototype.reset = function() {
 		}
 	}
 	
-	clQueue.enqueueWriteBuffer(vectorBuffer, true, 0, bufSize*3, this.getField(), []);
+	clQueue.enqueueWriteBuffer(vectorBuffer, false, 0, bufSize*3, this.getField(), []);
 }
 
 VectorField.prototype.getField = function() {
@@ -71,7 +71,7 @@ VectorField.prototype.addField = function(source) {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorAddKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {
@@ -91,7 +91,7 @@ VectorField.prototype.diffusion = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorCopyKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 
 		vectorDiffusionKernel.setKernelArg(0, vectorBuffer);
@@ -102,7 +102,7 @@ VectorField.prototype.diffusion = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorDiffusionKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {
@@ -122,7 +122,7 @@ VectorField.prototype.projection = function() {
 	  
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorInitFieldKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 		
 		vectorInitFieldKernel.setKernelArg(0, scalarSecondTempBuffer);
@@ -130,7 +130,7 @@ VectorField.prototype.projection = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorInitFieldKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 		
 		vectorProjectionFirst.setKernelArg(0, vectorBuffer);
@@ -141,7 +141,7 @@ VectorField.prototype.projection = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorProjectionFirst, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 		
 		this.setScalarFieldDensities(scalarTempBuffer);
@@ -156,7 +156,7 @@ VectorField.prototype.projection = function() {
 			
 			var start = Date.now();
 			clQueue.enqueueNDRangeKernel(vectorProjectionSecond, globalWS.length, [], globalWS, localWS, []);
-			clQueue.finish();
+			//clQueue.finish();
 			clTime += Date.now() - start;
 			
 			this.setScalarFieldDensities(scalarTempBuffer);
@@ -170,7 +170,7 @@ VectorField.prototype.projection = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorProjectionThird, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 		
 		this.setBoundaryVelocities();
@@ -192,7 +192,7 @@ VectorField.prototype.advection = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorCopyKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 
 		vectorAdvectionKernel.setKernelArg(0, vectorBuffer);
@@ -202,7 +202,7 @@ VectorField.prototype.advection = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorAdvectionKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {
@@ -225,7 +225,7 @@ VectorField.prototype.vorticityConfinement = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorCopyKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 
 		vectorVorticityFirstKernel.setKernelArg(0, vectorBuffer);
@@ -236,7 +236,7 @@ VectorField.prototype.vorticityConfinement = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorVorticityFirstKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 		
 		vectorVorticitySecondKernel.setKernelArg(0, vectorBuffer);
@@ -247,7 +247,7 @@ VectorField.prototype.vorticityConfinement = function() {
 		
 		var start = Date.now();	
 		clQueue.enqueueNDRangeKernel(vectorVorticitySecondKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {
@@ -266,7 +266,7 @@ VectorField.prototype.setBoundaryVelocities = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(vectorBoundariesKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {
@@ -285,7 +285,7 @@ VectorField.prototype.setScalarFieldDensities = function(field) {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(scalarBoundariesKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {

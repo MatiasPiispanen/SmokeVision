@@ -9,9 +9,6 @@
 		<meta name="description" content="" />
 		<meta name="author" content="Matias Piispanen" />
 		<meta name="viewport" content="width=device-width; initial-scale=1.0" />
-		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
-		<link rel="shortcut icon" href="/favicon.ico" />
-		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		
 		<script type="text/javascript" src="gl-matrix.js"></script>
 		<script type="text/javascript" src="webgl-utils.js"></script>
@@ -83,16 +80,17 @@
 		varying vec2 v_texCoord;
 		
 		void main() {
-		   gl_FragColor = texture2D(u_image, v_texCoord);
+		   gl_FragColor.rgb = texture2D(u_image, v_texCoord).rgb;
+       gl_FragColor.a = 1.0;
 		}
 	</script>
 	</head>
 	<body onload="webclfluid()" style="overflow-x:hidden;">
     <div style="width:80%; float:left;">
 			<h1>Fluid Simulation with WebCL</h1>
+      <p>Move your mouse over the simulation with a button pressed to stir the fluid!</p>
 			<canvas id="sim_canvas" width="320" height="240"
-			style="width:90%; max-height:80%; position:relative;
-      border-style:solid; border-color:black;"></canvas>
+      style="border-style:solid; border-color:black;"></canvas>
     </div>
     <div style="width:20%; float:right;">
 			<button type="button" onclick="reset()">Reset</button>

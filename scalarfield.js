@@ -1,6 +1,5 @@
 var scale = [];
 var corner = [];
-var pixels;
 
 function ScalarField(dim, viscosity, dt, boundaries, box) {
 	this.field = new Float32Array(getFlatSize(dim));
@@ -9,8 +8,7 @@ function ScalarField(dim, viscosity, dt, boundaries, box) {
 	this.dim = dim;
 	this.viscosity = viscosity;
 	this.dt = dt;
-	this.texture = gl.createTexture();
-	
+
 	scale = [1/(this.dim+2)*2, 1/(this.dim+2)*2, 1/(this.dim+2)*2];
 	corner = [-(this.dim+2)/2, -(this.dim+2)/2, -(this.dim+2)/2];
 	
@@ -21,6 +19,56 @@ function ScalarField(dim, viscosity, dt, boundaries, box) {
 			}
 		}
 	}
+
+  // WebGL texture setup
+
+	this.texture = gl.createTexture();
+	gl.bindTexture(gl.TEXTURE_2D, this.texture);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	
+  // WebGL shader setup
+
+  this.shaderProgram2D = simpleSetup( gl, "2d-vertex-shader", "2d-fragment-shader", [ "a_position", "a_texCoord"], [ 0, 0, 0, 0 ], 10000);
+	this.shaderProgram2D.positionLocation = gl.getAttribLocation(this.shaderProgram2D, "a_position");
+	this.shaderProgram2D.texCoordLocation = gl.getAttribLocation(this.shaderProgram2D, "a_texCoord");
+	this.shaderProgram2D.resolutionLocation = gl.getUniformLocation(this.shaderProgram2D, "u_resolution");
+	gl.uniform2f(this.shaderProgram2D.resolutionLocation, canvas.width, canvas.height);
+
+  // WebGL vertex attrib setup
+
+  var texCoordBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+	  0.0,  0.0,
+	  1.0,  0.0,
+	  0.0,  1.0,
+	  0.0,  1.0,
+	  1.0,  0.0,
+	  1.0,  1.0]), gl.STATIC_DRAW);
+	gl.enableVertexAttribArray(this.shaderProgram2D.texCoordLocation);
+	gl.vertexAttribPointer(this.shaderProgram2D.texCoordLocation, 2, gl.FLOAT, false, 0, 0);
+	
+	var buffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+	gl.enableVertexAttribArray(this.shaderProgram2D.positionLocation);
+	gl.vertexAttribPointer(this.shaderProgram2D.positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+  (function setRectangle(gl, x, y, width, height) {
+    var x1 = x;
+    var x2 = x + width;
+    var y1 = y;
+    var y2 = y + height;
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      x1, y1,
+      x2, y1,
+      x1, y2,
+      x1, y2,
+      x2, y1,
+      x2, y2]), gl.STATIC_DRAW);
+  })(gl, 0, 0, canvas.width, canvas.height);
 }
 
 ScalarField.prototype.setTimestep = function(value) {
@@ -41,7 +89,7 @@ ScalarField.prototype.reset = function() {
 			}
 		}
 	}
-	clQueue.enqueueWriteBuffer(scalarBuffer, true, 0, bufSize, this.getField(), []);
+	clQueue.enqueueWriteBuffer(scalarBuffer, false, 0, bufSize, this.getField(), []);
 }
 
 ScalarField.prototype.draw = function(viewer) {
@@ -59,79 +107,21 @@ ScalarField.prototype.draw = function(viewer) {
 	try {
 		var localWS = [];
 		var globalWS = [Math.ceil(canvas.width / 32) * 32, Math.ceil(canvas.height / 32) * 32];
-		pixels = new Uint8Array(pixelCount * 4);
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(volumeRayMarchingKernel, globalWS.length, [], globalWS, localWS, []);
 		clQueue.enqueueReadBuffer(pixelBuffer, true, 0, pixelCount * 4, pixels, []);
-		clQueue.finish();
 		raymarchTime += Date.now() - start;
-		gl.useProgram(shaderProgram2D);
 	}
 	catch(e) {
 		console.innerHTML = e;
 	}
 	
-	shaderProgram2D.positionLocation = gl.getAttribLocation(shaderProgram2D, "a_position");
-	shaderProgram2D.texCoordLocation = gl.getAttribLocation(shaderProgram2D, "a_texCoord");
-  
-  var texCoordBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-	  0.0,  0.0,
-	  1.0,  0.0,
-	  0.0,  1.0,
-	  0.0,  1.0,
-	  1.0,  0.0,
-	  1.0,  1.0]), gl.STATIC_DRAW);
-	gl.enableVertexAttribArray(shaderProgram2D.texCoordLocation);
-	gl.vertexAttribPointer(shaderProgram2D.texCoordLocation, 2, gl.FLOAT, false, 0, 0);
-	
-	
-	var texture = gl.createTexture();
-	gl.bindTexture(gl.TEXTURE_2D, texture);
-	
-	// Set the parameters so we can render any size image.
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-	for(var i = 0; i < pixelCount; i++) {
-		pixels[i*4 + 3] = 255;
-	}
-	
-	// Upload the image into the texture.
 	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 	
-	// lookup uniforms
-	var resolutionLocation = gl.getUniformLocation(shaderProgram2D, "u_resolution");
-	
-	// set the resolution
-	gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
-	
-	var buffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-	gl.enableVertexAttribArray(shaderProgram2D.positionLocation);
-	gl.vertexAttribPointer(shaderProgram2D.positionLocation, 2, gl.FLOAT, false, 0, 0);
-
-	// Set a rectangle the same size as the image.
-	setRectangle(gl, 0, 0, canvas.width, canvas.height);
-
-	// Draw the rectangle.
+	gl.useProgram(this.shaderProgram2D);
+  gl.disable(gl.BLEND);
+  gl.disable(gl.DEPTH_TEST);
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
-}
-
-function setRectangle(gl, x, y, width, height) {
-  var x1 = x;
-  var x2 = x + width;
-  var y1 = y;
-  var y2 = y + height;
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-    x1, y1,
-    x2, y1,
-    x1, y2,
-    x1, y2,
-    x2, y1,
-    x2, y2]), gl.STATIC_DRAW);
 }
 
 ScalarField.prototype.getField = function() {
@@ -145,7 +135,7 @@ ScalarField.prototype.step = function(source) {
 	this.advection();
 	
 	var start = Date.now();
-	clQueue.enqueueReadBuffer(scalarBuffer, true, 0, bufSize, this.field, []);
+	clQueue.enqueueReadBuffer(scalarBuffer, false, 0, bufSize, this.field, []);
 	clMemTime = Date.now() - start;
 }
 
@@ -161,7 +151,7 @@ ScalarField.prototype.addField = function(source) {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(scalarAddKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {
@@ -181,7 +171,7 @@ ScalarField.prototype.diffusion = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(scalarCopyKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 		
 		for(var i = 0; i < 20; i++) {
@@ -193,7 +183,7 @@ ScalarField.prototype.diffusion = function() {
 			
 			var start = Date.now();
 			clQueue.enqueueNDRangeKernel(scalarDiffusionKernel, globalWS.length, [], globalWS, localWS, []);
-			clQueue.finish();
+			//clQueue.finish();
 			clTime += Date.now() - start;
 		}
 	}
@@ -216,7 +206,7 @@ ScalarField.prototype.advection = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(scalarCopyKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 		
 		scalarAdvectionKernel.setKernelArg(0, scalarBuffer);
@@ -227,7 +217,7 @@ ScalarField.prototype.advection = function() {
 		
 		var start = Date.now();	
 		clQueue.enqueueNDRangeKernel(scalarAdvectionKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {
@@ -248,7 +238,7 @@ ScalarField.prototype.setBoundaryDensities = function() {
 		
 		var start = Date.now();
 		clQueue.enqueueNDRangeKernel(scalarBoundariesKernel, globalWS.length, [], globalWS, localWS, []);
-		clQueue.finish();
+		//clQueue.finish();
 		clTime += Date.now() - start;
 	}
 	catch(e) {

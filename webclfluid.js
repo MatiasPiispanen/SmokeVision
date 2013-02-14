@@ -11,7 +11,6 @@ var viewer;
 var dim = 16;
 var numCells;
 var shaderProgram;
-var shaderProgram2D;
 var gl;
 
 var platforms = [];
@@ -62,6 +61,7 @@ var vectorTempBuffer;
 
 var pixelBuffer;
 var pixelCount;
+var pixels;
 
 var scalarSrc;
 var vectorSrc;
@@ -84,7 +84,7 @@ var viscosity = 0.00001;
 var dt = 0.033;
 var ds = 1.0;
 
-var running = true;
+var running = false;
 
 requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||  
   window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;  
@@ -105,18 +105,15 @@ function webclfluid() {
 	document.getElementById("viscosity").value = viscosity;
 	
 	// Get WebGL context
-	gl = initWebGL("sim_canvas");
-	
-	pixelCount = canvas.width*canvas.height;
-	
+	gl = initWebGL("sim_canvas");	
+	if(!gl) {
+		return false;
+	}
+
 	gl.viewport(0, 0, canvas.width, canvas.height);
 	
-	if(!gl) {
-		return;
-	}
+	pixelCount = canvas.width*canvas.height;
   
-  shaderProgram2D = simpleSetup( gl, "2d-vertex-shader", "2d-fragment-shader", [ "a_position", "a_texCoord"], [ 0, 0, 0, 0 ], 10000);
-	
 	// create scalar and vector fields
 	scalarField = new ScalarField(dim, viscosity, dt, boundaries, box);
 	vectorField = new VectorField(dim, viscosity, dt, boundaries);
@@ -151,11 +148,15 @@ function webclfluid() {
 	scalarAddField[index(dim/2,dim-1,dim/2,dim)] = 1000.0;
 	vectorAddField[vindex(dim/2,dim-2,dim/2,1,dim)] = -200.0;
 	
-	setupWebCL();
+	if (setupWebCL() === false) {
+    return false;
+  }
 	
 	canvas.addEventListener('mousemove', mouse_move, false);
 	canvas.addEventListener('mouseenter', mouse_enter, false);
 	canvas.addEventListener('mouseleave', mouse_leave, false);
+	canvas.addEventListener('mousedown', mouse_down, false);
+	canvas.addEventListener('mouseup', mouse_up, false);
   mousePressed = 0;
 	
 	running = true;
@@ -211,21 +212,35 @@ function mouse_move(e) {
 }
 
 function mouse_enter(e) {
-  mousePressed = 1;
+	mouseX = e.layerX;
+	mouseY = e.layerY;
 }
 
 function mouse_leave(e) {
+	mouseX = e.layerX;
+	mouseY = e.layerY;
+}
+
+function mouse_down(e) {
+	mouseX = e.layerX;
+	mouseY = e.layerY;
+  mousePressed = 1;
+}
+
+function mouse_up(e) {
+	mouseX = e.layerX;
+	mouseY = e.layerY;
   mousePressed = 0;
 }
 
 function step() {  
 	if(running == true) {		
-		jsTime = Date.now() - prevTime - clTime - clMemTime - raymarchTime;
+    timeElapsed = Date.now() - prevTime;
 		prevTime = Date.now();
-		timerConsole.innerHTML  = "<br>WebCL  (ms): " + clTime;
-    timerConsole.innerHTML += "<br>WebCL memory transfers (ms): " + clMemTime;
-    timerConsole.innerHTML += "<br>Raymarch (ms): " + raymarchTime;
-    timerConsole.innerHTML += "<br>JavaScript (ms): " + jsTime;
+    timerConsole.innerHTML = "<br>Total time per frame (ms): " + timeElapsed;
+		//timerConsole.innerHTML += "<br>WebCL  (ms): " + clTime;
+    //timerConsole.innerHTML += "<br>WebCL memory transfers (ms): " + clMemTime;
+    //timerConsole.innerHTML += "<br>Raymarch (ms): " + raymarchTime;
 		
 		jsTime = 0;
 		clTime = 0;
@@ -283,6 +298,7 @@ function setupWebCL() {
 		clQueue = cl.createCommandQueue(selectedDevice, null);
 		allocateBuffers();
 	} catch(err) {
+    console.log(err);
 		alert("Error initializing WebCL");
     return false;
 	}
@@ -290,15 +306,16 @@ function setupWebCL() {
 	try {
 		scalarProgram = cl.createProgramWithSource(scalarSrc);
     var program = scalarProgram;
-		program.buildProgram([selectedDevice], "-cl-fast-relaxed-math -cl-denorms-are-zero");
+		program.buildProgram([selectedDevice], "-Werror -cl-fast-relaxed-math -cl-denorms-are-zero");
 
 		vectorProgram = cl.createProgramWithSource(vectorSrc);
     program = vectorProgram;
-		program.buildProgram([selectedDevice], "-cl-fast-relaxed-math -cl-denorms-are-zero");
+		program.buildProgram([selectedDevice], "-Werror -cl-fast-relaxed-math -cl-denorms-are-zero");
 	} catch(e) {
 		console.log("Failed to build WebCL program. Error " + 
           program.getProgramBuildInfo(selectedDevice, WebCL.CL_PROGRAM_BUILD_STATUS) + ":  " +
           program.getProgramBuildInfo(selectedDevice, WebCL.CL_PROGRAM_BUILD_LOG));
+    return false;
 	}
 	
 	scalarAddKernel = scalarProgram.createKernel("scalarAddField");
@@ -374,6 +391,12 @@ function viscosityChanged(value) {
 function allocateBuffers() {
 	var bufSize = 4 * numCells;
 	
+  // JavaScript buffers
+
+	pixels = new Uint8Array(pixelCount * 4);
+
+  // WebCL buffers
+
 	pixelBuffer = cl.createBuffer(WebCL.CL_MEM_READ_ONLY, pixelCount * 4);
 	
 	/* Scalar Buffers */
@@ -426,7 +449,7 @@ function freeBuffers() {
 
 function simResolutionChanged(resolution) {
 	running = false;
-	
+
 	if(resolution == 0) {
 		dim = 16
 	}
@@ -443,13 +466,15 @@ function simResolutionChanged(resolution) {
 		dim = 128;
 	}
 	
-	freeBuffers();
+	//freeBuffers();
 	webclfluid();
 }
 
 function resolutionChanged(resolution) {
 	running = false;
 	
+  if (!canvas) return;
+
 	if(resolution == 0) {
 		canvas.width = 320;
 		canvas.height = 240;
@@ -467,13 +492,13 @@ function resolutionChanged(resolution) {
 		canvas.height = 768;
 	}
 	
-	freeBuffers();
+	//freeBuffers();
 	webclfluid();
 }
 
 function deviceChanged(device) {
 	running = false;
-	freeBuffers();
+	//freeBuffers();
 	
 	selected = device;
 	
